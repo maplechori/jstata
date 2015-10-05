@@ -1,0 +1,36 @@
+{
+    "metadata" : {
+                "observations": 2,
+                "variables": 3
+            },
+    "data": [{ "prim_key" : "232342342",
+               "testswitch" : "32.3234",
+               "mode" : 32741 
+            }, 
+            {   "prim_key" : "33333333",
+                "testswitch" : "321233323",  
+                "mode" : 2147483621
+    }],
+    "variables": { 
+                    "prim_key" : { "vlabels" : "", 
+                                  "dlabels" : "PRIM KEY",
+                                  "vfmt" : "%17s", 
+                                  "valueType" : 20 },
+                    "testswitch" : { "vlabels" : "",
+                                     "dlabels" : "TEST SWITCH",
+                                     "vfmt" : "%17s",
+                                     "valueType" : 255 },
+                    "mode" : {
+                                "vlabels" : "gfk2_live_vl5",
+                                "dlabels" : "INTERVIEW MODE",
+                                "vfmt" : "%9.0g",
+                                "valueType" : 253
+                    }
+    },
+    "labels": {
+        "gfk2_live_vl5" : {
+            "44" : "44 Face",
+            "55" : "55 Call Center"
+        }
+    }
+}
