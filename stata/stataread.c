@@ -575,18 +575,6 @@ struct StataDataFile * R_LoadStataData(FILE *fp)
 	}
 
 	df->nlabels = j;
-	/** tidy up **/
-
-	/*PROTECT(row_names = allocVector(STRSXP, nobs));
-	for (i = 0; i < nobs; i++) {
-	sprintf(datalabel, "%d", i+1);
-	SET_STRING_ELT(row_names,i,mkChar(datalabel));
-	}
-	setAttrib(df, R_RowNamesSymbol, row_names);
-	*/
-
-	//INTEGER(sversion)[0] = (version == -7)? version : abs(version);
-
 	return df;
 }
 

@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-c
-LDFLAGS=
+LDFLAGS=`pkg-config --cflags --libs jansson`
 SOURCES=stataread.c statawrite.c stata.c
 OBJECTS=$(SOURCES:.c=.o)
 EXECUTABLE=libstata
@@ -19,4 +19,6 @@ demo:
 	${CC} -o demo demo.c `pkg-config --cflags --libs jansson`
 
 clean:
-		rm *.o demo
+		rm -rf *.o 
+		rm -rf demo
+
