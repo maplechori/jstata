@@ -109,6 +109,415 @@ static char* nameMangle(char *stataname, int len)
 	return stataname;
 }
 
+json_t * R_jsLoadStataData(FILE *fp)
+{
+    int i, j = 0, nvar, nobs, charlen, version, swapends,
+    varnamelength, nlabels, totlen, res, vlabelCounter = 0;
+    unsigned char abyte;
+    /* timestamp is used for timestamp and for variable formats */
+    char datalabel[81], timestamp[50], aname[33];
+    char stringbuffer[245], *txt;
+    int *off;
+    int fmtlist_len = 12;
+    
+    json_t * stata_js;
+    abyte = (unsigned char) RawByteBinary(fp, 1);
+    version = 0;         /* -Wall */
+    varnamelength = 0;       
+    json_object_seed(1);
+
+  switch (abyte)
+  {
+    case VERSION_5:
+      version = 5;
+      varnamelength = 8;
+      break;
+    case VERSION_6:
+      version = 6;
+      varnamelength = 8;
+      break;
+    case VERSION_7:
+      version = 7;
+      varnamelength = 32;
+      break;
+    case VERSION_7SE:
+      version = -7;
+      varnamelength = 32;
+      break;
+    case VERSION_8:
+      version = -8;    /* version 8 automatically uses SE format */
+      varnamelength = 32;
+      break;
+    case VERSION_114:
+      version = -10;
+      varnamelength = 32;
+      fmtlist_len = 49;
+    case VERSION_115:
+      /* Stata say the formats are identical,
+         but _115 allows business dates */
+      version = -12;
+      varnamelength = 32;
+      fmtlist_len = 49;
+      break;
+    default:
+      printf("not a Stata version 5-12 .dta file");
+    }
+    /* byte ordering */
+    stata_endian = (int) RawByteBinary(fp, 1);
+    swapends = stata_endian != CN_TYPE_NATIVE;
+    
+    RawByteBinary(fp, 1);    /* filetype -- junk */
+    RawByteBinary(fp, 1);    /* padding */
+    /* number of variables */
+    nvar = (InShortIntBinary(fp, 1, swapends));
+    /* number of cases */
+    nobs = (InIntegerBinary(fp, 1, swapends));
+
+    json_t * holder = json_object();
+
+
+  /* data label - zero terminated string */
+    switch (abs(version))
+    {
+      case 5:
+        InStringBinary(fp, 32, datalabel);
+        break;
+      case 6:
+      case 7:
+      case 8:
+      case 10:
+      case 12:
+        InStringBinary(fp, 81, datalabel);
+        break;
+    }
+    /* file creation time - zero terminated string */
+    InStringBinary(fp, 18, timestamp);
+
+    json_object_set( holder, "observations", json_integer(nobs));
+    json_object_set( holder, "variables",  json_integer(nvar));
+    json_object_set( holder, "datalabel", json_string(datalabel));
+    json_object_set( holder, "version", json_integer(version));
+    json_object_set( holder, "timestamp", json_string(timestamp));
+    stata_js = json_object();
+    json_object_set(stata_js, "metadata", holder);
+
+    /** and now stick the labels on it **/
+    /** read variable descriptors **/
+    /** types **/
+  
+    json_t * valueTypeArray = json_array();
+    if (version > 0)
+    {
+      for(i = 0; i < nvar; i++)
+      {
+  
+        abyte = (unsigned char) RawByteBinary(fp, 1);
+        json_array_append(valueTypeArray, json_integer(abyte));
+        switch (abyte)
+        {
+          case STATA_FLOAT:
+          case STATA_DOUBLE:
+            break;
+          case STATA_INT:
+          case STATA_SHORTINT:
+          case STATA_BYTE:
+            break;
+          default:
+            if (abyte < STATA_STRINGOFFSET)
+              printf("unknown data type");
+         break;
+        }
+      }
+    }
+    else
+    {
+  
+      for(i = 0; i < nvar; i++)
+      {
+  
+        abyte = (unsigned char) RawByteBinary(fp, 1);
+        json_array_append(valueTypeArray, json_integer(abyte));
+
+        switch (abyte)
+        {
+          case STATA_SE_FLOAT:
+          case STATA_SE_DOUBLE:
+            break;
+          case STATA_SE_INT:
+          case STATA_SE_SHORTINT:
+          case STATA_SE_BYTE:
+            break;
+          default:
+            if (abyte > 244)
+              printf("unknown data type");
+            break;
+        }
+    }
+  }
+
+    /** names **/
+    json_t * namedVariables = json_array(); 
+ 
+    for (i = 0; i < nvar; i++)
+    {
+      InStringBinary(fp, varnamelength+1, aname);
+      json_t * varname = json_object();
+      json_object_set(varname, "name", json_string(aname));
+      json_array_append(namedVariables, varname );
+    }
+
+    
+
+    /** sortlist -- not relevant **/
+    for (i = 0; i < 2*(nvar+1); i++) 
+        RawByteBinary(fp, 1);
+  
+
+    for (i = 0; i < nvar; i++)
+    {
+
+      json_t * varholder = json_array_get(namedVariables,i);
+      json_object_set(varholder, "valueType", json_array_get(valueTypeArray, i)); 
+      InStringBinary(fp, fmtlist_len, timestamp);
+      json_object_set(varholder, "vfmt", json_string(timestamp));
+      json_array_set(namedVariables, i, varholder);
+
+    }
+
+    //printf("Named Variable Again\n\r");
+    //json_dumpf(namedVariables, stdout, JSON_VALIDATE_ONLY | JSON_PRESERVE_ORDER);
+    printf("\n\r\n\r");
+
+    /** value labels.  These are stored as the names of label formats,
+    which are themselves stored later in the file. **/
+    
+    for(i = 0 ; i < nvar; i++)
+    {
+      InStringBinary(fp, varnamelength+1, aname);
+      json_t * varholder = json_array_get(namedVariables,i);
+      json_object_set(varholder, "vlabels", json_string(aname));
+      json_array_set(namedVariables, i, varholder);
+    }
+
+    /** Variable Labels **/
+
+    switch(abs(version))
+    {
+      case 5:
+        for(i = 0; i < nvar; i++)
+        {
+          InStringBinary(fp, 32, datalabel);
+          json_t * varholder = json_array_get(namedVariables, i);
+          json_object_set(varholder, "dlabels", json_string(datalabel));
+          json_array_set(namedVariables, i, varholder);
+        }
+        break;
+      case 6:
+      case 7:
+      case 8:
+      case 10:
+      case 12:
+        for(i = 0; i < nvar; i++)
+        {
+          InStringBinary(fp, 81, datalabel);
+          json_t * varholder = json_array_get(namedVariables, i);
+          json_object_set(varholder, "dlabels", json_string(datalabel));
+          json_array_set(namedVariables, i, varholder);
+
+        }
+    }
+
+    json_object_set(stata_js, "variables", namedVariables);
+    j = 0;
+    while(RawByteBinary(fp, 1))
+    {
+      if (abs(version) >= 7)   /* manual is wrong here */
+        charlen = (InIntegerBinary(fp, 1, swapends));
+      else
+       charlen = (InShortIntBinary(fp, 1, swapends));
+
+      if((charlen > 66))
+      {
+        InStringBinary(fp, 33, datalabel);
+        InStringBinary(fp, 33, datalabel);
+        txt = calloc(1, (size_t) (charlen-66));
+        InStringBinary(fp, (charlen-66), txt);
+        free(txt);
+        j++;
+      } 
+      else
+        for (i = 0; i < charlen; i++) InByteBinary(fp, 1);
+     }
+     if(j > 0)
+        ;
+
+    if (abs(version) >= 7)
+        charlen = (InIntegerBinary(fp, 1, swapends));
+    else
+        charlen = (InShortIntBinary(fp, 1, swapends));
+    if (charlen != 0)
+        printf("something strange in the file\n (Type 0 characteristic of nonzero length)");
+
+  /* Data time */
+  
+  json_t * data = json_array();
+
+    
+  if (version > 0)       /* not Stata/SE */
+  {
+    for(i = 0; i < nobs; i++)
+    {
+      json_t * currentObservation = json_array();
+
+      for(j = 0; j < nvar; j++)
+      {
+         
+        switch (json_integer_value(json_object_get(json_array_get(namedVariables,j),"valueType")))
+        {
+          case STATA_FLOAT:
+            json_array_append(currentObservation,  json_real( InFloatBinary(fp, 0, swapends)));
+            break;
+          case STATA_DOUBLE:
+            json_array_append(currentObservation,  json_real( InDoubleBinary(fp, 0, swapends)));
+            break;
+          case STATA_INT:
+            json_array_append(currentObservation,  json_integer( InIntegerBinary(fp, 0, swapends)));
+            break;
+          case STATA_SHORTINT:
+            json_array_append(currentObservation,  json_integer( InShortIntBinary(fp, 0, swapends)));
+            break;
+          case STATA_BYTE:
+            json_array_append(currentObservation,  json_integer( InByteBinary(fp, 0)));
+            break;
+          default:
+            charlen = json_integer_value(json_object_get(json_array_get(namedVariables,j),"valueType"))  - STATA_SE_STRINGOFFSET;
+
+            if(charlen > 244)
+            {
+              printf("invalid character string length -- truncating to 244 bytes");
+              charlen = 244;
+            }
+
+            InStringBinary(fp, charlen, stringbuffer);
+            stringbuffer[charlen] = 0;
+            json_array_append(currentObservation, json_string(stringbuffer));
+
+            break;
+        }
+      }
+        json_array_set(data, i, currentObservation);
+    }
+  }
+  else
+  {
+    for(i = 0; i < nobs; i++)
+    {
+          json_t * currentObservation = json_array();
+
+      for(j = 0; j < nvar; j++)
+      {
+        printf("[%d, %d]\n", i, j);
+        switch (json_integer_value(json_object_get(json_array_get(namedVariables,j),"valueType")))
+        {
+          case STATA_SE_FLOAT:
+            json_array_append(currentObservation, json_real( InFloatBinary(fp, 0, swapends)));
+            break;
+          case STATA_SE_DOUBLE:
+            json_array_append(currentObservation, json_real( InDoubleBinary(fp, 0, swapends)));
+            break;
+          case STATA_SE_INT:
+            json_array_append(currentObservation, json_integer( InIntegerBinary(fp, 0, swapends)));
+            break;
+          case STATA_SE_SHORTINT:
+            json_array_append(currentObservation, json_integer( InShortIntBinary(fp, 0, swapends)));
+            break;
+          case STATA_SE_BYTE:
+            json_array_append(currentObservation, json_integer( InByteBinary(fp, 0)));
+            break;
+          default:
+            charlen = json_integer_value(json_object_get(json_array_get(namedVariables,j),"valueType"))  - STATA_SE_STRINGOFFSET;
+            if(charlen > 244)
+            {
+              printf("invalid character string length -- truncating to 244 bytes");
+              charlen = 244;
+            }
+            InStringBinary(fp, charlen, stringbuffer);
+            stringbuffer[charlen] = 0;
+            json_array_append(currentObservation, json_string(stringbuffer));
+            break;
+        }
+      }
+        json_array_append(data, currentObservation);
+    }
+}
+
+
+    json_t * labels = json_object();
+    
+    /** value labels **/
+    if (abs(version) > 5)
+    {
+      for(j = 0; ; j++)
+      {
+        /* first int not needed, use fread directly to trigger EOF */
+        res = (int) fread((int *) aname, sizeof(int), 1, fp);
+        if (feof(fp)) break;
+        if (res != 1) printf("a binary read error occurred");
+  
+        InStringBinary(fp, varnamelength+1, aname);
+        /*padding*/
+        RawByteBinary(fp, 1); RawByteBinary(fp, 1); RawByteBinary(fp, 1);
+        nlabels = InIntegerBinary(fp, 1, swapends);
+        totlen = InIntegerBinary(fp, 1, swapends);
+        
+        off =  calloc(sizeof(int), (size_t) nlabels);
+        for(i = 0; i < nlabels; i++)
+          off[i] = InIntegerBinary(fp, 1, swapends);
+  
+        int * levels = calloc(sizeof(int), (size_t)nlabels);
+        for(i = 0; i < nlabels; i++)
+          levels[i] =  InIntegerBinary(fp, 0, swapends);
+        txt =  calloc(sizeof(char), (size_t) totlen);
+        InStringBinary(fp, totlen, txt);
+ 
+        json_t * vlabel = json_object();
+        
+        json_t * jlevels = json_object();
+        for(i = 0; i < nlabels; i++)
+        { 
+            char buf[50];
+            sprintf(buf, "%d", levels[i]);
+            json_object_set(jlevels, buf, json_string(txt+off[i]));
+        }
+       
+        if (json_object_get(stata_js, "labels"))    
+        {
+            json_t * tmplev = json_object_get(stata_js, "labels");
+            json_object_set(tmplev, aname, jlevels);
+            json_object_set(stata_js, "labels", tmplev);
+        }
+        else
+        { 
+            json_object_set(vlabel, aname, jlevels);
+            json_object_set(stata_js, "labels", vlabel);
+        }
+
+        free(off);
+        free(txt);
+        free(levels);
+        
+      }
+    }
+ 
+    json_object_set( holder, "nlabels", json_integer(j));
+    json_object_set(stata_js, "metadata", holder);
+
+    
+    json_object_set(stata_js, "data", data);
+    json_dumpf(stata_js, stdout, JSON_VALIDATE_ONLY);
+
+    return stata_js;
+}
 
 struct StataDataFile * R_LoadStataData(FILE *fp)
 {
@@ -635,6 +1044,31 @@ int do_stataClose(struct StataDataFile * dta)
 	return 0;
 }
 
+
+json_t * do_jsReadStata(char * fileName)
+{
+    int result;
+    FILE * fp;
+    json_t * df = NULL;
+
+  if ((sizeof(double)!=8) | (sizeof(int)!=4) | (sizeof(float)!=4))
+  {
+    fprintf(stderr, "can not yet read Stata .dta on this platform");
+    return NULL;
+  }
+  
+  fp = fopen(fileName, "rb");
+  if (!fp)
+  {
+    fprintf(stderr, "Unable to open file: '%s'", strerror(errno));
+    return NULL;
+  }
+
+  df = R_jsLoadStataData(fp);
+  //fprintf(stderr, "Observations: %d\n\r", 
+  fclose(fp);
+  return df;
+}
 
 struct StataDataFile * do_readStata(char * fileName)
 {

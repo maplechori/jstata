@@ -27,8 +27,11 @@
 #define JS_STATA_EXTNAME "jstata"
 #define JS_STATA_AUTHOR "Adrian Montero"
 
-
+struct StataDataFile * stata_open(char * name);
 struct StataDataFile * do_readStata(char * fileName);
-int do_stataClose(struct StataDataFile * dta);
+int stata_close(struct StataDataFile *dta);
+int do_stataClose(struct StataDataFile *);
+json_t * do_jsReadStata(char * fileName);
+json_t * js_stata_open(char * name);
 
 #endif
