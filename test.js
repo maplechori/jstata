@@ -1,4 +1,8 @@
 
 var jstata = require('./jstata.js');
 
-console.log(jstata.stataRead());
+
+
+var o = jstata.stataRead('stata/gfk2_live.dta');
+
+console.log(o.data);

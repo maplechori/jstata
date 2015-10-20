@@ -42,11 +42,9 @@ int main(int argc, char *argv[])
     json_t *root;
     json_error_t error;
 
-    struct StataDataFile  * st = stata_open("gfk2_live.dta");
-    
-    stata_close(st);
-    json_t * js_stata_file = js_stata_open("filename4.dta");
-    json_dump_file(js_stata_file, "filename4.json", JSON_VALIDATE_ONLY);
+    char * js_stata_file = js_stata_open("filename4.dta");
+    printf("%s",js_stata_file);
+    free(js_stata_file);
     if (argc != 1)
     {
         root = json_load_file(argv[1], 0, &error); 

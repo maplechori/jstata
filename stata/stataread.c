@@ -284,9 +284,6 @@ json_t * R_jsLoadStataData(FILE *fp)
 
     }
 
-    //printf("Named Variable Again\n\r");
-    //json_dumpf(namedVariables, stdout, JSON_VALIDATE_ONLY | JSON_PRESERVE_ORDER);
-    printf("\n\r\n\r");
 
     /** value labels.  These are stored as the names of label formats,
     which are themselves stored later in the file. **/
@@ -416,7 +413,6 @@ json_t * R_jsLoadStataData(FILE *fp)
 
       for(j = 0; j < nvar; j++)
       {
-        printf("[%d, %d]\n", i, j);
         switch (json_integer_value(json_object_get(json_array_get(namedVariables,j),"valueType")))
         {
           case STATA_SE_FLOAT:
@@ -514,7 +510,7 @@ json_t * R_jsLoadStataData(FILE *fp)
 
     
     json_object_set(stata_js, "data", data);
-    json_dumpf(stata_js, stdout, JSON_VALIDATE_ONLY);
+    //json_dumpf(stata_js, stdout, JSON_VALIDATE_ONLY);
 
     return stata_js;
 }
@@ -988,68 +984,11 @@ struct StataDataFile * R_LoadStataData(FILE *fp)
 }
 
 
-int do_stataClose(struct StataDataFile * dta)
-{
-	if (dta != NULL)
-	{
-		struct StataVariable * stv = NULL;
-		struct StataVariable * tmpVar = NULL;
-		struct StataLabel * tmpLab = NULL;
-		struct StataLabel * stl;
-		struct StataObservation * sto = NULL;
-		struct StataObservation * tmpSto = NULL;
-		struct StataObservationData * std = NULL;
-		struct StataObservationData * tmpStd = NULL;
-
-		for (sto = dta->observations; sto; sto = tmpSto)
-		{
-
-			for (std = sto->data; std; std = tmpStd)
-			{
-				tmpStd = std->next;
-				free(std);
-			}
-
-			tmpSto = sto->next;
-			free(sto);
-		}
-
-		for (stl = dta->labels; stl; stl = tmpLab)
-		{
-			free(stl->name);
-			free(stl->string);
-			tmpLab = stl->next;
-			free(stl);
-		}
-
-		for(stv = dta->variables; stv; stv = tmpVar)
-		{
-			free(stv->name);
-			free(stv->vfmt);
-			free(stv->vlabels);
-			free(stv->dlabels);
-			tmpVar = stv->next;
-			free(stv);
-
-		}
-
-		free(dta->datalabel);
-		free(dta->timestamp);
-		free(dta);
-
-		return 1;
-
-	}
-
-	return 0;
-}
-
-
 json_t * do_jsReadStata(char * fileName)
 {
-    int result;
-    FILE * fp;
-    json_t * df = NULL;
+  int result;
+  FILE * fp;
+  json_t * df = NULL;
 
   if ((sizeof(double)!=8) | (sizeof(int)!=4) | (sizeof(float)!=4))
   {
@@ -1065,31 +1004,7 @@ json_t * do_jsReadStata(char * fileName)
   }
 
   df = R_jsLoadStataData(fp);
-  //fprintf(stderr, "Observations: %d\n\r", 
   fclose(fp);
   return df;
 }
 
-struct StataDataFile * do_readStata(char * fileName)
-{
-	int result;
-	FILE *fp;
-	struct StataDataFile * df = NULL;
-
-	if ((sizeof(double)!=8) | (sizeof(int)!=4) | (sizeof(float)!=4))
-	{
-		fprintf(stderr, "can not yet read Stata .dta on this platform");
-		return NULL;
-	}
-
-	fp = fopen(fileName, "rb");
-	if (!fp)
-	{
-		fprintf(stderr, "unable to open file: '%s'", strerror(errno));
-		return NULL;
-	}
-	df = R_LoadStataData(fp);
-	fprintf(stderr, "Observations: %d\n\r",  df->nobs);
-	fclose(fp);
-	return df;
-}

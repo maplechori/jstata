@@ -32,6 +32,6 @@ struct StataDataFile * do_readStata(char * fileName);
 int stata_close(struct StataDataFile *dta);
 int do_stataClose(struct StataDataFile *);
 json_t * do_jsReadStata(char * fileName);
-json_t * js_stata_open(char * name);
+char * js_stata_open(char * name);
 
 #endif

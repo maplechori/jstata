@@ -2,19 +2,17 @@ var ref = require('ref');
 var ffi = require('ffi');
 var Struct = require('ref-struct');
 
-
-var libstata = ffi.Library('stata/libstata', {
-      'js_stata_open' : ['pointer', ['string']]
+libstata = ffi.Library('stata/libstata', {
+      'js_stata_open' : ['string', ['string']]
 });
-
-
-console.log(libstata.js_stata_open('stata/filename4.dta'));
 
 
 module.exports = {
 
-  stataRead: function() {
-    return { data: 'blah' }
+  stataRead: function(filename) {
+
+
+    return JSON.parse(libstata.js_stata_open(filename));
   },
 
   stataWrite: function() {
