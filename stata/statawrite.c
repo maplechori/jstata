@@ -20,6 +20,7 @@
 // http://www.stata.com/help.cgi?dta_115
 
 #include "stataread.h"
+#include "stata.h"
 static int stata_endian;
 #define R_PosInf INFINITY
 #define R_NegInf -INFINITY
@@ -591,8 +592,27 @@ void R_SaveStataData(FILE *fp, json_int_t obs, json_int_t nvars, json_t *data, j
 
 }
 
+int js_stata_write(char * fileName, char * jsonStringified)
+{
+    json_t * json_r;
 
-void do_writeStata(char *fileName, json_int_t nobs, json_int_t vars, json_t *data, json_t *variables, json_t *labels)
+    json_error_t error;
+    json_r = json_loads(jsonStringified, JSON_VALIDATE_ONLY, &error);
+    if (!json_r)
+    {
+        return -1;
+    }
+    
+    json_int_t obs = json_integer_value(json_object_get(json_object_get(json_r, "metadata"), "observations"));
+    json_int_t vars = json_integer_value(json_object_get(json_object_get(json_r, "metadata"), "variables"));
+
+    printf("obs: %d variables: %d\n\r", (int)obs, (int)vars);
+
+    do_writeStata(fileName, obs, vars, json_object_get(json_r, "data"), json_object_get(json_r, "variables"), json_object_get(json_r, "labels"), json_object_get(json_r, "metadata"));
+    return 0;
+}
+
+void do_writeStata(char *fileName, json_int_t nobs, json_int_t vars, json_t *data, json_t *variables, json_t *labels, json_t *metadata)
 {
 	FILE *fp;
 
@@ -602,7 +622,7 @@ void do_writeStata(char *fileName, json_int_t nobs, json_int_t vars, json_t *dat
 	fp = fopen(fileName, "wb");
 	if (!fp)
 		printf("unable to open file for writing: '%s'", strerror(errno));
-	R_SaveStataData(fp, nobs, vars, data, variables, labels);
+	//R_SaveStataData(fp, nobs, vars, data, variables, labels);
 	fclose(fp);
 
 }

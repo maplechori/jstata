@@ -27,11 +27,8 @@
 #define JS_STATA_EXTNAME "jstata"
 #define JS_STATA_AUTHOR "Adrian Montero"
 
-struct StataDataFile * stata_open(char * name);
-struct StataDataFile * do_readStata(char * fileName);
-int stata_close(struct StataDataFile *dta);
-int do_stataClose(struct StataDataFile *);
-json_t * do_jsReadStata(char * fileName);
-char * js_stata_open(char * name);
-
+json_t * do_jsReadStata(char *);
+char * js_stata_read(char *);
+void do_writeStata(char *fileName, json_int_t nobs, json_int_t vars, json_t *data, json_t *variables, json_t *labels, json_t *metadata);
+int js_stata_write(char *, char *);
 #endif

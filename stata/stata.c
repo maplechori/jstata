@@ -20,7 +20,7 @@
 #include "stataread.h"
 #include "stata.h"
 
-char * js_stata_open(char * name)
+char * js_stata_read(char * name)
 {
     json_t * dta = NULL;
     fprintf(stderr, "Opening stata file: %s\n", name);
