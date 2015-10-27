@@ -4,15 +4,15 @@ var jstata = require('./jstata.js');
 
 var exportData = {
   data: [
-    ['hi'],
-    ['wee']
+    ['hi',1],
+    ['wee',2]
   ],
   metadata: {
-      timestamp: '12 Dec 2015 13:00',
+      timestamp: '21 Oct 2015 23:26',
       observations: 2,
-      variables: 1,
-      datalabel: 'Created by Adrian',
-      version: -12,
+      variables: 2,
+      datalabel: 'JStata',
+      version: 10,
       nlabels: 1,
   },
   variables: [
@@ -22,10 +22,20 @@ var exportData = {
       dlabels: 'message variable',
       vlabels: '',
       valueType: 3
+    },
+    {
+      vfmt: '%9.0g',
+      name: 'number',
+      dlabels: 'number variable',
+      vlabels: 'TYesNo',
+      valueType: 253
     }
   ],
   labels:{
-
+    'TYesNo': [
+        [1, 'Yes'],
+        [2, 'No' ]
+      ]
   }
 
 }

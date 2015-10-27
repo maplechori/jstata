@@ -36,58 +36,24 @@ char * js_stata_read(char * name)
 }
 
 
-int stata_write()
+int js_stata_write(char * fileName, char * jsonStringified)
 {
-/*	zval *labels, *data, *variables, **entry;
-	char *fname;
-	int str_len;
-	int i;
+    json_t * json_r;
 
+    json_error_t error;
+    json_r = json_loads(jsonStringified, JSON_VALIDATE_ONLY, &error);
+    if (!json_r)
+    {
+        return -1;
+    }
 
-	zval **datas;
-	char **data_array = NULL;
+    json_int_t obs = json_integer_value(json_object_get(json_object_get(json_r, "metadata"), "observations"));
+    json_int_t vars = json_integer_value(json_object_get(json_object_get(json_r, "metadata"), "variables"));
 
-	if (zend_hash_exists(Z_ARRVAL_P(labels), "labels", sizeof("labels")))
-	{
-		fprintf(stderr, "Key \"labels\" exists<br>");
-		zval **innerLabels;
-		zval **vlabels;
-		HashPosition position;
-		zend_hash_find(Z_ARRVAL_P(labels), "labels", sizeof("labels"), (void **)&innerLabels);
+    printf("obs: %d variables: %d\n\r", (int)obs, (int)vars);
 
-		for (zend_hash_internal_pointer_reset_ex(Z_ARRVAL_PP(innerLabels), &position);
-			zend_hash_get_current_data_ex((*innerLabels)->value.ht, (void**) &vlabels, &position) == SUCCESS;
-			zend_hash_move_forward_ex((*innerLabels)->value.ht, &position))
-		{
-
-			if (Z_TYPE_PP(vlabels) == IS_ARRAY)
-			{
-				HashPosition pointer;
-				char *key;
-				uint key_len, key_type;
-				long index;
-
-				key_type = zend_hash_get_current_key_ex(Z_ARRVAL_PP(vlabels), &key, &key_len, &index, 0, &position);
-
-				switch (key_type)
-				{
-					case HASH_KEY_IS_STRING:
-						// associative array keys
-						//php_printf("key: %s<br>", key);
-						break;
-					case HASH_KEY_IS_LONG:
-						// numeric indexes
-						//php_printf("index: %ld<br>", index);
-						break;
-					default:
-						printf("error<br>");
-				}
-			}
-
-		}
-
-	}
-
-	do_writeStata(fname, data, variables, labels);
-*/
+    do_writeStata(fileName, obs, vars, json_object_get(json_r, "data"), json_object_get(json_r, "variables"), json_object_get(json_r, "labels"), json_object_get(json_r, "metadata"));
+    return 0;
 }
+
+
