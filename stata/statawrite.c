@@ -21,9 +21,22 @@
 
 #include "stataread.h"
 #include "stata.h"
-static int stata_endian;
+//static int stata_endian;
 #define R_PosInf INFINITY
 #define R_NegInf -INFINITY
+
+double NA_REAL()
+{
+    /* The gcc shipping with RedHat 9 gets this wrong without
+*      * the volatile declaration. Thanks to Marc Schwartz. */
+    volatile ieee_double x;
+    x.word[hw] = 0x7ff00000;
+    x.word[lw] = 1954;
+    return x.value;
+}
+
+
+
 
 void R_SaveStataData(FILE *fp, json_int_t obs, json_int_t nvars, json_t *data, json_t *vars, json_t *labels, json_t *metadata);
 
@@ -55,14 +68,14 @@ static void OutByteBinary(unsigned char i, FILE * fp)
 		printf("a binary write error occurred");
 }
 
-
+/*
 static void OutDataByteBinary(int i, FILE * fp)
 {
 	i=(unsigned char) ((i == NA_INTEGER) ? STATA_BYTE_NA : i);
 	if (fwrite(&i, sizeof(char), 1, fp) != 1)
 		printf("a binary write error occurred");
 }
-
+*/
 
 static void OutShortIntBinary(int i,FILE * fp)
 {
@@ -123,7 +136,7 @@ writeStataValueLabel(const char *labelName, json_t * theselabels, const int name
 	txtlen = 0;
 
   
-  for(i=0; i<json_array_size(theselabels); i++)
+  for(i=0; i<(int)json_array_size(theselabels); i++)
   {
     txtlen += json_string_length(json_array_get(json_array_get(theselabels,i),1))+1;
   }
@@ -148,7 +161,7 @@ writeStataValueLabel(const char *labelName, json_t * theselabels, const int name
 	len = 0;
 
   
-  for(i=0; i<json_array_size(theselabels); i++)
+  for(i=0; i<(int)json_array_size(theselabels); i++)
   {
 
 		OutIntegerBinary((int)len, fp, 0);
@@ -156,14 +169,10 @@ writeStataValueLabel(const char *labelName, json_t * theselabels, const int name
 	}
 	/* values: just 1,2,3,...*/
 
-  for(i=0; i<json_array_size(theselabels); i++)
+  for(i=0; i<(int)json_array_size(theselabels); i++)
 	{
 
-		char *keyStr;
-    char valStr[256];
-		uint key_len, key_type;
 		long index;
-		int k;
 
 		index = json_integer_value(json_array_get(json_array_get(theselabels,i),0));
     printf("currentValue: %ld\n\r", index);
@@ -174,7 +183,7 @@ writeStataValueLabel(const char *labelName, json_t * theselabels, const int name
 
 	/* the actual labels */
 
-  for(i=0; i<json_array_size(theselabels); i++)
+  for(i=0; i<(int)json_array_size(theselabels); i++)
   {
 
     len = json_string_length(json_array_get(json_array_get(theselabels,i),1));
@@ -197,12 +206,11 @@ writeStataValueLabel(const char *labelName, json_t * theselabels, const int name
 void R_SaveStataData(FILE *fp, json_int_t obs, json_int_t nvars, json_t *data, json_t *vars, json_t *labels, json_t *metadata)
 {
 	int version = 10;
-	int i, j, k = 0, l, nvar, nobs, charlen;
+	int i, j, k = 0, nvar, nobs, charlen;
 
 	char datalabel[81];  
 	char	timestamp[18], aname[33];
 	char format9g[50] = "%9.0g", strformat[50] = "";
-	const char *thisnamechar;
   memset(datalabel, 0, 81);
   if (json_string_length(json_object_get(metadata, "datalabel")) < 80)
       strncpy(datalabel, json_string_value(json_object_get(metadata, "datalabel")),json_string_length(json_object_get(metadata,"datalabel")));
@@ -270,8 +278,7 @@ void R_SaveStataData(FILE *fp, json_int_t obs, json_int_t nvars, json_t *data, j
 	/** write variable descriptors **/
 	/* version 8, 10 */
 
-	const char *vkey, *dkey;
-	json_t *value, *dvalue;
+	const char *vkey;
 
   for (i = 0; i < nvar; i++)
 	{
@@ -472,9 +479,6 @@ void R_SaveStataData(FILE *fp, json_int_t obs, json_int_t nvars, json_t *data, j
   {
 
 		char *keyStr;
-		uint key_len, key_type;
-		long index;
-		int k;
     
     keyStr = (char *)json_object_iter_key(iter);
     printf("BeforeWriteStataValueLabel: %s\n\r",json_object_iter_key(iter));

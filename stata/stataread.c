@@ -82,7 +82,7 @@ static double InDoubleBinary(FILE * fp, int naok, int swapends)
 		printf("a binary read error occurred");
 	if (swapends)
 		reverse_double(i);
-	return ((i == STATA_DOUBLE_NA) & !naok ? NA_REAL : i);
+	return ((i == STATA_DOUBLE_NA) & !naok ? NA_REAL() : i);
 }
 
 
@@ -93,7 +93,7 @@ static double InFloatBinary(FILE * fp, int naok, int swapends)
 		printf("a binary read error occurred");
 	if (swapends)
 		reverse_float(i);
-	return ((i == STATA_FLOAT_NA) & !naok ? NA_REAL :  (double) i);
+	return ((i == STATA_FLOAT_NA) & !naok ? NA_REAL() :  (double) i);
 }
 
 
@@ -104,15 +104,10 @@ static void InStringBinary(FILE * fp, int nchar, char* buffer)
 }
 
 
-static char* nameMangle(char *stataname, int len)
-{
-	return stataname;
-}
-
 json_t * R_jsLoadStataData(FILE *fp)
 {
     int i, j = 0, nvar, nobs, charlen, version, swapends,
-    varnamelength, nlabels, totlen, res, vlabelCounter = 0;
+    varnamelength, nlabels, totlen, res;
     unsigned char abyte;
     /* timestamp is used for timestamp and for variable formats */
     char datalabel[81], timestamp[50], aname[33];
@@ -345,8 +340,8 @@ json_t * R_jsLoadStataData(FILE *fp)
       else
         for (i = 0; i < charlen; i++) InByteBinary(fp, 1);
      }
-     if(j > 0)
-        ;
+ //    if(j > 0)
+ //       ;
 
     if (abs(version) >= 7)
         charlen = (InIntegerBinary(fp, 1, swapends));
@@ -448,7 +443,7 @@ json_t * R_jsLoadStataData(FILE *fp)
 }
 
 
-    json_t * labels = json_object();
+    //json_t * labels = json_object();
     
     /** value labels **/
     if (abs(version) > 5)
@@ -518,7 +513,7 @@ json_t * R_jsLoadStataData(FILE *fp)
 struct StataDataFile * R_LoadStataData(FILE *fp)
 {
 	int i, j = 0, nvar, nobs, charlen, version, swapends,
-		varnamelength, nlabels, totlen, res, vlabelCounter = 0;
+		varnamelength, nlabels, totlen, res;
 	unsigned char abyte;
 	/* timestamp is used for timestamp and for variable formats */
 	char datalabel[81], timestamp[50], aname[33];
@@ -691,7 +686,7 @@ struct StataDataFile * R_LoadStataData(FILE *fp)
 	/** names **/
 	struct StataVariable * stv = NULL;
 
-	for (i = 0, stv=df->variables; i < nvar, stv; i++, stv = stv->next)
+	for (i = 0, stv=df->variables; i < nvar && stv; i++, stv = stv->next)
 	{
 		InStringBinary(fp, varnamelength+1, aname);
 		stv->name = strdup(aname);
@@ -770,8 +765,8 @@ struct StataDataFile * R_LoadStataData(FILE *fp)
 		} else
 		for (i = 0; i < charlen; i++) InByteBinary(fp, 1);
 	}
-	if(j > 0)
-		;
+	//if(j > 0)
+	//	;
 
 	if (abs(version) >= 7)
 		charlen = (InIntegerBinary(fp, 1, swapends));
@@ -780,7 +775,6 @@ struct StataDataFile * R_LoadStataData(FILE *fp)
 	if (charlen != 0)
 		printf("something strange in the file\n (Type 0 characteristic of nonzero length)");
 
-	struct StataObservation * obsp = NULL;
 	struct StataObservation *obspcurr = NULL;
 	struct StataObservationData * dptr = NULL;
 	/** The Data **/
@@ -805,7 +799,7 @@ struct StataDataFile * R_LoadStataData(FILE *fp)
 				obspcurr->n = i;
 			}
 
-			for(j = 0, stv = df->variables; j < nvar, stv; j++, stv = stv->next)
+			for(j = 0, stv = df->variables; j < nvar && stv; j++, stv = stv->next)
 			{
 
 				if (obspcurr->data == NULL)
@@ -870,7 +864,7 @@ struct StataDataFile * R_LoadStataData(FILE *fp)
 				obspcurr->n = i;
 			}
 
-			for(j = 0, stv = df->variables; j < nvar, stv; j++, stv = stv->next)
+			for(j = 0, stv = df->variables; j < nvar && stv; j++, stv = stv->next)
 			{
 
 				if (obspcurr->data == NULL)
@@ -986,7 +980,6 @@ struct StataDataFile * R_LoadStataData(FILE *fp)
 
 json_t * do_jsReadStata(char * fileName)
 {
-  int result;
   FILE * fp;
   json_t * df = NULL;
 

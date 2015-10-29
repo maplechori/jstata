@@ -91,19 +91,9 @@ static int lw = 0;
 #endif /* WORDS_BIGENDIAN */
 
 
-static double R_ValueOfNA(void)
-{
-    /* The gcc shipping with RedHat 9 gets this wrong without
-     * the volatile declaration. Thanks to Marc Schwartz. */
-    volatile ieee_double x;
-    x.word[hw] = 0x7ff00000;
-    x.word[lw] = 1954;
-    return x.value;
-}
+//#define NA_REAL R_ValueOfNA()
 
-
-#define NA_REAL R_ValueOfNA()
-
+double NA_REAL();
 
 struct StataLabel
 {
