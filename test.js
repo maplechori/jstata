@@ -1,7 +1,6 @@
 
 var jstata = require('./jstata.js');
 
-
 var exportData = {
   data: [
     ['hi',1],
@@ -38,12 +37,8 @@ var exportData = {
       ]
   }
 
-}
+}; 
 
 
 
-var o = jstata.stataRead('stata/filename4.dta');
-console.log(libstata);
-console.log(o);
-console.log(exportData);
 jstata.stataWrite('stata/export.dta', exportData);
