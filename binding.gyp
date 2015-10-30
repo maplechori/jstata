@@ -9,7 +9,8 @@
                    "stata/stataread.h",
                    "stata/swap_bytes.h",
                    "stata/stata.h"],
-        "libraries" : [ '-ljansson', '-L/usr/lib/x86_64-linux-gnu', '-L./build/Release/lib.target'],
+        "libraries" : [ '../libjansson.a'],
+        "cflags" : [ "-fPIC" ],
     }
     ]
 }

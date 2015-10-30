@@ -2,7 +2,7 @@ var ref = require('ref');
 var ffi = require('ffi');
 var Struct = require('ref-struct');
 
-libstata = ffi.Library('build/Release/lib.target/stata.so', {
+libstata = ffi.Library('./build/Release/lib.target/stata.so', {
       'js_stata_read' : ['string', ['string']],
       'js_stata_write' : ['void', ['string', 'string']],
       });
