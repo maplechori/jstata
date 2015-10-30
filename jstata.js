@@ -1,6 +1,5 @@
 var ref = require('ref');
 var ffi = require('ffi');
-var Struct = require('ref-struct');
 
 libstata = ffi.Library('./build/Release/lib.target/stata.so', {
       'js_stata_read' : ['string', ['string']],
