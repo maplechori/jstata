@@ -9,7 +9,8 @@
                    "stataread.h",
                    "swap_bytes.h",
                    "stata.h"],
-        "libraries" : [ 'libjansson.a'],
+        "libraries" : [ '<!(pwd)/libjansson.a'],
+        "ldflags" : ['-Wl,-rpath,<!(pwd)'],
         "cflags" : [ "-fPIC" ],
     }
     ]
