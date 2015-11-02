@@ -41,4 +41,4 @@ var exportData = {
 
 
 
-jstata.stataWrite('stata/export.dta', exportData);
+jstata.stataWrite('export.dta', exportData);
