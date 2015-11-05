@@ -1,7 +1,7 @@
 var ref = require('ref');
 var ffi = require('ffi');
 
-libstata = ffi.Library(__dirname + '/build/Release/lib.target/stata.so', {
+libstata = ffi.Library(__dirname + '/stata.so', {
       'js_stata_read' : ['string', ['string']],
       'js_stata_write' : ['void', ['string', 'string']],
       });
