@@ -24,6 +24,6 @@
     "url": "git://github.com/maplechori/jstata.git"
   },
   "author": "Adrian Montero <maplechori@gmail.com>",
-  "license": "GPL",
-  "os" : [ "linux" ]
+  "license": "GPL-2.0-or-later",
+  "os" : [ "linux", "darwin" ]
 }
