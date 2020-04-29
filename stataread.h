@@ -25,7 +25,6 @@
 
 #include <stdio.h>
 #include <stdlib.h> /* for abs */
-#include <malloc.h>
 #include <errno.h>
 #include "swap_bytes.h"
 #include <math.h>
