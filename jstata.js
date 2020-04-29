@@ -1,5 +1,5 @@
-var ref = require('ref');
-var ffi = require('ffi');
+const ref = require('ref');
+const ffi = require('ffi');
 
 libstata = ffi.Library(__dirname + '/stata.so', {
       'js_stata_read' : ['string', ['string']],

@@ -42,9 +42,6 @@ int main(int argc, char *argv[])
     json_t *root;
     json_error_t error;
 
-    char * js_stata_file = js_stata_read("filename4.dta");
-    printf("%s",js_stata_file);
-    free(js_stata_file);
     if (argc != 1)
     {
         root = json_load_file(argv[1], 0, &error); 

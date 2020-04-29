@@ -4,8 +4,8 @@
   "description": "NodeJS Stata Module",
   "main": "jstata.js",
   "dependencies": {
-    "ffi": "^2.0.0",
-    "ref": "^1.1.3"
+    "ffi": "^2.3.0",
+    "ref": "^1.3.5"
   },
   "devDependencies": {
     "chai": "^3.4.0",
@@ -25,5 +25,8 @@
   },
   "author": "Adrian Montero <maplechori@gmail.com>",
   "license": "GPL-2.0-or-later",
-  "os" : [ "linux", "darwin" ]
+  "os": [
+    "linux",
+    "darwin"
+  ]
 }
